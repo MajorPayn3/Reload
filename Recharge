@@ -1,0 +1,55 @@
+let itemName = 'Scattergun'; // edit this to the weapon or item you want to reload or recharge
+let ammoType = 'Power Cell'; // edit this to the item you want to be consumed to reload
+let macroActor = actor;
+
+//let ammoAdd = 100;         // edit this to change how many charges should be added per ammo spent
+//let ammoSet = 100;         // edit this to change what a charge of ammo sets an item's charges to
+
+let sendToChat = true;
+
+if (!actor) {
+    ui.notifications.warn('You need to select a token before using this macro!');
+} else {
+
+	let myItem = actor.items.find(i => i.name == itemName);
+	let myAmmo = actor.items.find(i => i.name == ammoType);
+	if (myItem != null)
+	{
+	    if (myAmmo != null)
+	    {
+    		let item = actor.getOwnedItem(myAmmo._id);
+    		let attr = 'data.uses.value';
+    		let value = getProperty(item.data, attr);
+//   		let newValue = duplicate(item.data.uses.value);
+//   		let oldValue = (item.data.uses.value);
+      		if (sendToChat) {			
+	    		if (value > 0) {
+	    			chatMessage(actor.name + ' <b>reloads</b> their <i><b>' + ' ' + itemName + '</i></b>');
+//	    			item.update({[attr]: !getProperty(item.data, 100)});
+//	    			newValue[ammoKey].value--;
+//	    			obj['data.uses.value'] = oldValue 
+//					macroActor.update(obj);
+	    		} else {
+	    			chatMessage("You don't have enough <i><b>" + ammoType + '</i></b> to reload your <i><b>' + itemName + '</i></b>!');			
+	    		}
+	    	}
+
+		} else {
+		    ui.notifications.warn('You need a <i><b>' + ammoType + '</i></b> to reload your <i><b>' + itemName + '</i></b>!');
+		}
+	} else {
+	    ui.notifications.warn('No item named <i><b>' + itemName + '</i></b> found on ' + macroActor.name + '!');
+	}
+}
+
+function chatMessage(messageContent) {
+	// create the message
+	if (messageContent !== '') {
+		let chatData = {
+			user: game.user._id,
+			speaker: ChatMessage.getSpeaker(),
+			content: messageContent,
+		};
+		ChatMessage.create(chatData, {});
+	}
+}
