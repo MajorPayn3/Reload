@@ -1,0 +1,54 @@
+let itemName = 'Scattergun';        // edit this to the weapon or item you want to reload or recharge
+let ammoType = 'Power Cell';        // edit this to the item you want to be consumed to reload
+let macroActor = actor;
+
+//let ammoAdd = 25;                // edit this to change how much 1 charge of your ammo item adds to your targeted item
+let ammoSet = 100;                  // edit this to change how much 1 charge of your ammo item sets the charge of targeted item to
+//let ammoCost = 1                  // edit this to change how many units of ammo are spent to reload your item.
+
+let sendToChat = true;
+
+let myItem = actor.items.find(i => i.name == itemName);
+let myItemShots = actor.items.find(i => i.data.uses.value == itemName);
+let myAmmo = actor.items.find(i => i.name == ammoType);
+
+if (!actor) {
+    ui.notifications.warn('You need to select a token before using this macro!');
+} else {
+	if (myItem != null)             //checks for targeted reload item on player
+	{
+	    if (myAmmo != null)         //checks for ammo item on player
+	    {
+    		let ammo = actor.getOwnedItem(myAmmo._id);
+    		let charges = 'data.uses.value';
+    		let value = getProperty(ammo.data, charges);
+      		if (sendToChat) {			
+	    		if (value > 0) {    //checks for ammo item to have more than 0 charges
+	    			chatMessage(actor.name + ' <b>reloads</b> their <i><b>' + ' ' + itemName + '</i></b>');
+	    			chatMessage(ammoSet)
+                    let update = {_id: myItem._id, name: ammoSet};
+                    let updated = await actor.updateOwnedItem(update);      //updates given info
+	    		} else {
+	    			chatMessage("You don't have enough <i><b>" + ammoType + '</i></b> to reload your <i><b>' + itemName + '</i></b>!');			
+	    		}
+	    	}
+
+		} else {
+		    ui.notifications.warn('You need a <i><b>' + ammoType + '</i></b> to reload your <i><b>' + itemName + '</i></b>!');
+		}
+	} else {
+	    ui.notifications.warn('No item named <i><b>' + itemName + '</i></b> found on ' + macroActor.name + '!');
+	}
+}
+
+function chatMessage(messageContent) {
+	// create the message
+	if (messageContent !== '') {
+		let chatData = {
+			user: game.user._id,
+			speaker: ChatMessage.getSpeaker(),
+			content: messageContent,
+		};
+		ChatMessage.create(chatData, {});
+	}
+}
