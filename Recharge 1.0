@@ -1,0 +1,63 @@
+//// This macro takes an item you wish to have recharged and uses charges of another item to set it to a specific value
+
+let itemName = 'Scattergun';        // edit this to the weapon or item you want to reload or recharge
+let ammoType = 'Power Cell';        // edit this to the item you want to be consumed to reload
+let ammoSet = 100;                  // edit this to change how much 1 charge of your ammo item sets the charge of targeted item to
+let ammoCost = 1;                   // edit this to change how many units of ammo are spent to reload your item.
+let ammoFull = 100                  // edit this to set what the maximum amount of charge you will allow targeted item to be recharged to (protects from players reloading accidentally and wasting ammo as well)
+//let ammoAdd = 25;                // edit this to change how much 1 charge of your ammo item adds to your targeted item
+
+let macroActor = actor;
+let myItem = actor.items.find(i => i.name == itemName);
+let myAmmo = actor.items.find(i => i.name == ammoType);
+
+let sendToChat = true;
+
+if (!actor) {
+    ui.notifications.warn('You need to select a token before using this macro!');
+} else {
+	if (myItem != null)             //checks for targeted reload item on player
+	{
+	    if (myAmmo != null)         //checks for ammo item on player
+	    {
+    		let ammo = actor.getOwnedItem(myAmmo._id);
+    		let charges = 'data.uses.value';
+    		let value = getProperty(ammo.data, charges);
+    		let itemAmmo = actor.getOwnedItem(myItem._id);
+    		let itemCharges = 'data.uses.value';
+    		let itemValue = getProperty(itemAmmo.data, charges);
+      		if (sendToChat) {			
+	    		if (itemValue < ammoFull) {    //checks to see if targeted item is already full
+    		        if (value >= ammoCost) {    //checks for ammo item to have enough charges to reload
+	    			    chatMessage(actor.name + ' <b>reloads</b> their <i><b>' + ' ' + itemName + '</i></b> using ' + ammoCost + ' charge(s) of <i><b>' + ammoType + '</i></b>');
+                        let updateItem = {_id: myItem._id, 'data.uses.value': ammoSet};
+                        let updatedItem = await actor.updateOwnedItem(updateItem);      //updates item
+                        let updateAmmo = {_id: myAmmo._id, 'data.uses.value': 'data.uses.value' - ammoCost};
+                        let updatedAmmo = await actor.updateOwnedItem(updateAmmo);      //updates ammo
+    		        } else {
+	    			chatMessage(actor.name + " doesn't have enough <i><b>" + ammoType + '(s)' + '</i></b> to <b>reload</b> their <i><b>' + itemName + '</i></b>!');			
+	    		}
+	    		} else {
+	    			chatMessage(actor.name + ' attempts to <b>reload</b> their <i><b>' + itemName + '</i></b> but realizes it is fully loaded.');
+	    		}
+	    	}
+
+		} else {
+		    ui.notifications.warn('You need <i><b>' + ammoType + '(s)' + '</i></b> to <b>reload</b> your <i><b>' + itemName + '</i></b>!');
+		}
+	} else {
+	    ui.notifications.warn('No item named <i><b>' + itemName + '</i></b> found on your character!');
+	}
+}
+
+function chatMessage(messageContent) {
+	// create the message
+	if (messageContent !== '') {
+		let chatData = {
+			user: game.user._id,
+			speaker: ChatMessage.getSpeaker(),
+			content: messageContent,
+		};
+		ChatMessage.create(chatData, {});
+	}
+}
