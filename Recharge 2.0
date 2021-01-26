@@ -1,0 +1,84 @@
+//// This macro takes an item you wish to have recharged and uses charges of another item to set it to a specific value.
+//// This macro will be expanded in the future to allow for alternate ammo types, partial reloads, overcharged loads, and others.
+
+//// ****READ ME****
+//// Currently, selected Ammo must be a consumable that is set to destroy on empty with 1 charge for it to properly prompt player to expend their ammo item.
+//// Player must choose to expend ammo manually when the window appears - similar to a force power (If they don't, a player may reload without expending ammo) This will be corrected in the future.
+//// If a player has multiple of the same weapon, have them have different names so the macro properly finds the weapon.
+//// Macro setting "ammoCost" currently only supports checking for number of charges of single selected ammo unit (i.e. cannot properly check for multiple unique items that have separate charges at this time.)
+//// E.g. a theoretical, "Power Belt" with 5/5 charges will properly go to 3/5 charges if something costs 2 ammo units to reload but will not properly remove 2 equivalent "Power Cells" if a player has 5 of them.
+
+let itemName = 'Hold-out';          // edit this to the weapon or item you want to reload or recharge. The name must be *exactly* the same.
+let ammoType = 'Power Cell';        // edit this to the item you want to be consumed to reload. The name must be *exactly* the same.
+//let ammoTypeAlt = 'SECONDARY'       // CURRENTLY UNUSED edit this to a different type of ammo to reload your item
+
+let ammoSet = 6;                    // edit this to change to change what 
+let ammoCost = 1;                   // edit this to change how many units of ammo are spent to reload your item.
+let ammoFull = 6;                   // edit this to set what the maximum amount of charge you will allow targeted item to be recharged to (protects from players reloading accidentally and wasting ammo as well)
+//let ammoAdd = 25;                   // CURRENTLY UNUSED edit this to change how much 1 charge of your ammo item adds to your targeted item
+
+let useCharges = false;             // set to true if you wish to use 
+//let allowAltAmmo = false;           // CURRENTLY UNUSED set this to true to allow secondary ammo types
+
+let macroActor = actor;
+let myItem = actor.items.find(i => i.name == itemName);
+let myAmmo = actor.items.find(i => i.name == ammoType);
+
+let sendToChat = true;
+
+if (!actor) {
+    ui.notifications.warn('You need to select a token before using this macro!');
+} else {
+	if (myItem != null)             //checks for targeted reload item on player
+	{
+	    if (myAmmo != null)         //checks for ammo item on player
+	    {
+    		let ammo = actor.getOwnedItem(myAmmo._id);
+    		let charges = 'data.uses.value';
+    		let value = getProperty(ammo.data, charges);
+    		let itemAmmo = actor.getOwnedItem(myItem._id);
+    		let itemCharges = 'data.uses.value';
+    		let itemValue = getProperty(itemAmmo.data, charges);
+    		let reloadedShots = ammoFull - itemValue
+      		if (sendToChat) {			
+	    		if (itemValue < ammoFull) {    //checks to see if targeted item is already full
+    		        if (value >= ammoCost) {    //checks for ammo item to have enough charges to reload
+    		            if (!useCharges) {
+	    			        chatMessage(actor.name + ' <b>reloads</b> their <i><b>' + ' ' + itemName + '</i></b> using ' + ammoCost + ' charge(s) of <i><b>' + ammoType + '</i></b>, reloading ' + reloadedShots + ' shot(s).');
+                            let updateItem = {_id: myItem._id, 'data.uses.value': ammoSet};
+                            let updatedItem = await actor.updateOwnedItem(updateItem);      //updates item
+                            game.sw5e.rollItemMacro(ammoType);  // removes ammo item
+                        } else {
+                            chatMessage(actor.name + ' <b>reloads</b> their <i><b>' + ' ' + itemName + '</i></b> using ' + ammoCost + ' charge(s) of <i><b>' + ammoType + '</i></b>, reloading ' + reloadedShots + ' shot(s).');
+                            let updateItem = {_id: myItem._id, 'data.uses.value': ammoSet};
+                            let updatedItem = await actor.updateOwnedItem(updateItem);      //updates item
+                            let updateAmmo = {_id: myAmmo._id, 'data.uses.value': 'data.uses.value' - ammoCost};
+                            let updatedAmmo = await actor.updateOwnedItem(updateAmmo);      //updates ammo charges without destroying item
+                        }
+    		        } else {
+	    			chatMessage(actor.name + " doesn't have enough <i><b>" + ammoType + '(s)' + '</i></b> to <b>reload</b> their <i><b>' + itemName + '</i></b>!');			
+	    		}
+	    		} else {
+	    			chatMessage(actor.name + ' attempts to <b>reload</b> their <i><b>' + itemName + '</i></b> but realizes it is fully loaded.');
+	    		}
+	    	}
+
+		} else {
+		    ui.notifications.warn('You need <i><b>' + ammoType + '(s)' + '</i></b> to <b>reload</b> your <i><b>' + itemName + '</i></b>!');
+		}
+	} else {
+	    ui.notifications.warn('No item named <i><b>' + itemName + '</i></b> found on your character!');
+	}
+}
+
+function chatMessage(messageContent) {
+	// create the message
+	if (messageContent !== '') {
+		let chatData = {
+			user: game.user._id,
+			speaker: ChatMessage.getSpeaker(),
+			content: messageContent,
+		};
+		ChatMessage.create(chatData, {});
+	}
+}
